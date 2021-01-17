@@ -9,6 +9,7 @@ class SodokuMatrix:
         self.matrix = []
         self.blankBlock = 0
         self.candidates = []
+        self.countOfCandiates = 0
         self.step = 0
         self.time_s = time.time()
 
@@ -45,6 +46,7 @@ class SodokuMatrix:
                 
                 for k in range(1,10):
                     self.candidates[i][j].append(k)
+                self.countOfCandiates += 10
 
                 # 消除行重复数
                 for k in range(9):
@@ -52,12 +54,14 @@ class SodokuMatrix:
                         continue
                     if self.matrix[i][k] in self.candidates[i][j]:
                         self.candidates[i][j].remove(self.matrix[i][k])
+                        self.countOfCandiates -= 1
                 # 消除列重复数
                 for k in range(9):
                     if k == j:
                         continue
                     if self.matrix[k][j] in self.candidates[i][j]:
                         self.candidates[i][j].remove(self.matrix[k][j])
+                        self.countOfCandiates -= 1
                 # 消除宫重复数
                 block = self.GetBlocKIndex(i,j)
 
@@ -68,6 +72,7 @@ class SodokuMatrix:
 
                         if self.matrix[m][n] in self.candidates[i][j]:
                             self.candidates[i][j].remove(self.matrix[m][n])
+                            self.countOfCandiates -= 1
 
         os.system("cls")
         print("Th amount of blank unit : [ ",self.blankBlock," ]")
@@ -177,6 +182,8 @@ class SodokuMatrix:
         print("Solved successfully")
         print("Time cost : [",round(time.time() - self.time_s,2)," seconds ]")
         print("Count of recursion : [",self.step," times ]")
+        print("Count of blank units : [",self.blankBlock,"]")
+        print("Count of candiates : [",self.countOfCandiates,"]")
         for i in self.matrix:
             print(i)
         exit()
