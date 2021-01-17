@@ -12,6 +12,6 @@ from Painter import Painter
 
 def main():
     matrix = SodokuMatrix(askopenfilename())
-    matrix.Solve()
+    #matix.Solve()
     #painter = Painter(matrix)
 main()
