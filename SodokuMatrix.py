@@ -87,6 +87,7 @@ class SodokuMatrix:
         print("********************** After optimizing ************************")
         print("The amount of blank unit : [ ",self.blankBlock," ]")
         print("The count of candiates : [ ",self.countOfCandiates," ]")
+        input()
 
     # 通过行列下标获得所在宫下标
     def GetBlocKIndex(self,_row,_column):
@@ -197,7 +198,8 @@ class SodokuMatrix:
     # 候选数组优化
     def Optimize(self):
         self.BlockFirstExclusion()
-    
+        self.RcFirstExclusion()
+
     # [ 宫区块对行列排除法 ] 
     # 在某一宫中同一个候选数出现在同一行或同一列 
     # 则该候选数在同行同列的其他宫中的候选数组中删除
@@ -304,4 +306,106 @@ class SodokuMatrix:
                                 self.candidates[r][y].  remove(i)
                                 self.countOfCandiates -= 1
                                 #print("Block : ",block," Remove : (",i,") in [",r,",",y,"]")
-                           
+    
+    # [ 行列对宫排除法 ]
+    # 一行或一列中的某一侯选数的侯选位置
+    # 都在一个宫内 则该候选数所在宫的其他侯选位置删除该候选数
+    # 有效候选数 A 的宫内分布数量必然属于 [1,3]
+    def RcFirstExclusion(self):
+        # 行搜寻
+        for i in range(9):
+            # 数组 [0] 不使用
+            # 记录行中候选数分布 分布从 0 到 9
+            distribution = [[],[],[],[],[],[],[],[],[],[]]
+
+            # 记录候选分布 存放列号
+            for j in range(9):
+                if len(self.candidates[i][j]) == 0:
+                    continue
+
+                for k in self.candidates[i][j]:
+                    distribution[k].append(j)
+
+            for j in range(1,10):
+                if len(distribution[j]) == 0 or len(distribution[j]) > 3:
+                    continue
+
+                block = self.GetBlocKIndex(i,distribution[j][0])
+
+                if len(distribution[j]) == 1:
+                    # 消除宫内异行候选数
+                    for n in self.GetRangeByBlock_Row(block):
+                        for m in self.GetRangeByBlock_Column(block):
+                            if n == i:
+                                continue
+                            
+                            if j in self.candidates[n][m]:
+                                self.candidates[n][m].remove(j)
+                                self.countOfCandiates -= 1
+                else:
+                    valid = True
+
+                    # 检查候选数所处侯选位置是否全部属于一个宫之中
+                    for k in distribution[j]:
+                        if self.GetBlocKIndex(i,k) != block:
+                            valid = False
+                            break
+
+                    if valid:
+                        for n in self.GetRangeByBlock_Row(block):
+                            for m in self.GetRangeByBlock_Column(block):
+                                if n == i:
+                                    continue
+
+                                if j in self.candidates[n][m]:
+                                    self.candidates[n][m].remove(j)
+                                    self.countOfCandiates -= 1
+
+        # 列搜寻
+        for c in range(9):
+            # 数组 [0] 不使用
+            # 记录列中候选数分布 分布从 0 到 9
+            distribution = [[],[],[],[],[],[],[],[],[],[]]
+
+            # 记录候选分布 存放行号
+            for r in range(9):
+                if len(self.candidates[r][c]) == 0:
+                    continue
+
+                for k in self.candidates[r][c]:
+                    distribution[k].append(r)
+
+            for j in range(1,10):
+                if len(distribution[j]) == 0 or len(distribution[j]) > 3:
+                    continue
+
+                block = self.GetBlocKIndex(distribution[j][0],c)
+
+                if len(distribution[j]) == 1:
+                    # 消除宫内异列候选数
+                    for n in self.GetRangeByBlock_Row(block):
+                        for m in self.GetRangeByBlock_Column(block):
+                            if m == c:
+                                continue
+                            
+                            if j in self.candidates[n][m]:
+                                self.candidates[n][m].remove(j)
+                                self.countOfCandiates -= 1
+                else:
+                    valid = True
+
+                    # 检查候选数所处侯选位置是否全部属于一个宫之中
+                    for k in distribution[j]:
+                        if self.GetBlocKIndex(k,c) != block:
+                            valid = False
+                            break
+
+                    if valid:
+                        for n in self.GetRangeByBlock_Row(block):
+                            for m in self.GetRangeByBlock_Column(block):
+                                if m == c:
+                                    continue
+
+                                if j in self.candidates[n][m]:
+                                    self.candidates[n][m].remove(j)
+                                    self.countOfCandiates -= 1
