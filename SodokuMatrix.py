@@ -48,16 +48,16 @@ class SodokuMatrix:
                     self.candidates[i][j].append(k)
                 self.countOfCandiates += 10
 
-                # 消除行重复数
+                # 消除行上重复数
                 for k in range(9):
                     if k == j:
                         continue
                     if self.matrix[i][k] in self.candidates[i][j]:
                         self.candidates[i][j].remove(self.matrix[i][k])
                         self.countOfCandiates -= 1
-                # 消除列重复数
+                # 消除列上重复数
                 for k in range(9):
-                    if k == j:
+                    if k == i:
                         continue
                     if self.matrix[k][j] in self.candidates[i][j]:
                         self.candidates[i][j].remove(self.matrix[k][j])
@@ -205,6 +205,7 @@ class SodokuMatrix:
     # 当 A 侯选位置 = 1 该数必然符合条件
     # 当 A 侯选位置 = 2 or = 3 判断侯选位置是否为同一行(列) 是则符合条件
     def BlockFirstExclusion(self):
+
         # 宫循环
         for block in range(9):
             # 记录候选数分布 总为增序 (下标为 0 的数组不用)
@@ -217,55 +218,90 @@ class SodokuMatrix:
 
                     if len(self.candidates[i][j]) == 0:
                         continue
+                    
+                    # print("Block : ",block," Index : ",index,"(x,y) = (",i,",",j,") Candiates : ",self.candidates[i][j])
+                    # input()
 
                     for k in self.candidates[i][j]:
                         distribution[k].append(index)
 
+            # print("Block Index : ",block)
+            # d = 0
+            # for i in distribution:
+            #     print("Candiate : ",d," ",i)
+            #     d += 1
+            # print()
+            # input()
+        
             # 遍历候选数分布数组
             for i in range(1,10):
                 if len(distribution[i]) > 3 or len(distribution[i]) == 0:
                     continue
-                # 宫号和宫内分布下标转换成矩阵坐标
+                # 宫号和宫内分布下标转换成矩阵坐标(第一个候选数出现位置的坐标)
 
                 x = int(block / 3) * 3
                 y = block % 3 * 3
 
-                x += int(index / 3)
-                y += index % 3
+                x += int(distribution[i][0] / 3)
+                y += distribution[i][0] % 3
 
                 if len(distribution[i]) == 1:
-                    print("(1)Valid candiate was detected : [",i,"] Coodination : [",x,",",y,"]")
+                    #print("(1)Valid candiate was detected : [",i,"] Coodination : [",x,",",y,"] len : ")
                     # 行列排除
                     for c in range(9):
                         if c == y:
                             continue
                         if i in self.candidates[x][c]:
                             self.candidates[x][c].remove(i)
+                            #print("Block : ",block," Remove : (",i,") in [",x,",",c,"]")
+                            self.countOfCandiates -= 1
                     for r in range(9):
                         if r == x:
                             continue
                         if i in self.candidates[r][y]:
                             self.candidates[r][y].remove(i)
+                            #print("Block : ",block," Remove : (",i,") in [",r,",",y,"]")
+                            self.countOfCandiates -= 1
                 else:
-                    print("(2/3)Valid candiate was detected : [",i,"] Coodination : [",x,",",y,"]")
                     # 判断是否为同一行 通过判断最大最小值是否在同一个宫内行域
-                    tmp = int(int(distribution[i][0]) / 3 * 3)
+                    tmp = int(int(distribution[i][0] / 3) * 3)
                     valid = True
 
+                    #print("Verify candiate : ",i,"  Index : ",distribution[i]," Range : ",range(tmp,tmp+3))
                     for j in distribution[i]:
-                        if j not in range(tmp,tmp + 2):
+                        if j not in range(tmp,tmp + 3):
                             valid = False
                             break
                     
                     if valid:
-                        # 行列排除(保留宫)
+                        #print("(2/3)Valid candiate was detected : [",i,"] Coodination : [",x,",",y,"]")
+                        # 行排除(保留宫)
                         for c in range(9):
                             if c == y or self.GetBlocKIndex(x,c) == block:
                                 continue
                             if i in self.candidates[x][c]:
                                 self.candidates[x][c].remove(i)
+                                self.countOfCandiates -= 1
+                                #print("Block : ",block," Remove : (",i,") in [",x,",",c,"]")
+                    
+                    # 判断是否为同一列 通过宫内下标取余
+                    # 判断余数是否一致
+                    # 一致则表示在同一行
+                    valid = True
+                    tmp = distribution[i][0] % 3
+
+                    for j in distribution[i]:
+                        if j % 3 != tmp:
+                            valid = False
+                            break
+                    
+                    if valid:
+                        # 列排除(保留宫)
                         for r in range(9):
                             if r == x or self.GetBlocKIndex(r,y) == block:
                                 continue
                             if i in self.candidates[r][y]:
-                                self.candidates[r][y].remove(i)
+                                self.candidates[r][y].  remove(i)
+                                self.countOfCandiates -= 1
+                                #print("Block : ",block," Remove : (",i,") in [",r,",",y,"]")
+                           
