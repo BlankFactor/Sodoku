@@ -83,11 +83,11 @@ class SodokuMatrix:
         # for i in self.candidates:
         #     print(i)
 
-        self.Optimize()
-        print("********************** After optimizing ************************")
-        print("The amount of blank unit : [ ",self.blankBlock," ]")
-        print("The count of candiates : [ ",self.countOfCandiates," ]")
-        input()
+        # self.Optimize()
+        # print("********************** After optimizing ************************")
+        # print("The amount of blank unit : [ ",self.blankBlock," ]")
+        # print("The count of candiates : [ ",self.countOfCandiates," ]")
+        # input()
 
     # 通过行列下标获得所在宫下标
     def GetBlocKIndex(self,_row,_column):
