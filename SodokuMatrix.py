@@ -83,10 +83,10 @@ class SodokuMatrix:
         # for i in self.candidates:
         #     print(i)
 
-        # self.Optimize()
-        # print("********************** After optimizing ************************")
-        # print("The amount of blank unit : [ ",self.blankBlock," ]")
-        # print("The count of candiates : [ ",self.countOfCandiates," ]")
+        self.Optimize()
+        print("********************** After optimizing ************************")
+        print("The amount of blank unit : [ ",self.blankBlock," ]")
+        print("The count of candiates : [ ",self.countOfCandiates," ]")
         # input()
 
     # 通过行列下标获得所在宫下标
@@ -195,10 +195,23 @@ class SodokuMatrix:
             print(i)
         exit()
 
-    # 候选数组优化
+    # 宫号(0-8)和宫内下标(0-8)转矩阵坐标
+    def BlockAndIndexToXY(self,_block,_index):
+        x = int(_block / 3) * 3
+        y = _block % 3 * 3
+
+        x += int(_index / 3)
+        y += _index % 3
+
+        return x,y
+
+    # 候选数组优化方法 选择
     def Optimize(self):
+        self.ArrayPlaceholder()
         self.BlockFirstExclusion()
         self.RcFirstExclusion()
+
+#<editor-fold desc = "具体优化方法">
 
     # [ 宫区块对行列排除法 ] 
     # 在某一宫中同一个候选数出现在同一行或同一列 
@@ -241,11 +254,12 @@ class SodokuMatrix:
                     continue
                 # 宫号和宫内分布下标转换成矩阵坐标(第一个候选数出现位置的坐标)
 
-                x = int(block / 3) * 3
-                y = block % 3 * 3
+                x,y = self.BlockAndIndexToXY(block,distribution[i][0])
+                # x = int(block / 3) * 3
+                # y = block % 3 * 3
 
-                x += int(distribution[i][0] / 3)
-                y += distribution[i][0] % 3
+                # x += int(distribution[i][0] / 3)
+                # y += distribution[i][0] % 3
 
                 if len(distribution[i]) == 1:
                     #print("(1)Valid candiate was detected : [",i,"] Coodination : [",x,",",y,"] len : ")
@@ -409,3 +423,106 @@ class SodokuMatrix:
                                 if j in self.candidates[n][m]:
                                     self.candidates[n][m].remove(j)
                                     self.countOfCandiates -= 1
+    
+    # [ 数对(组)占位法 ]
+    # 当某一宫 某一行 或 某一列中的 N 个候选数
+    # 分别占据 N 个相同的 宫列行中的位置
+    # 则该 N 个位置的其他候选数排除
+    # N 从 1 开始 即一个候选数仅能填在该区域
+    def ArrayPlaceholder(self):
+        # 宫搜索数组
+        for block in range(9):
+            # 下标 0 不使用
+            distribution = [[],[],[],[],[],[],[],[],[],[]]
+            array = []
+            
+            index = -1
+            blankUnit = 0
+
+            for r in self.GetRangeByBlock_Row(block):
+                for c in self.GetRangeByBlock_Column(block):
+                    index += 1
+
+                    if len(self.candidates[r][c]) == 0:
+                        continue
+                    
+                    blankUnit += 1
+                    for k in self.candidates[r][c]:
+                        distribution[k].append(index)
+
+            # 通过判断子集归纳候选数
+            potential = []
+            for i in range(1,10): # 主集合
+                temp = []
+                temp.append(i)
+
+                for j in range(1,10): # 子集合
+                    if i == j or len(distribution[j]) == 0:
+                        continue
+
+                    if set(distribution[j]) <= set(distribution[i]):
+                        temp.append(j)
+
+
+                sorted(temp)
+
+                if (len(temp) == 1 and len(distribution[temp[0]]) != 1) or temp in potential or len(temp) == blankUnit:
+                    continue
+
+                potential.append(temp)
+
+            
+            # 处理潜在有效数对
+            # 判断数对中候选数区域个数是否和数对个数相匹配
+            for i in potential:
+                cos = 0
+
+                for k in i:
+                    if len(distribution[k]) > cos:
+                        cos = len(distribution[k])
+
+                # 数对个数和候选区域总数匹配 则消数
+                if cos == len(i):
+                    # 唯一数对法 直接填补矩阵
+                    if cos == 1:
+                        candidate = i[0]
+                        index = distribution[candidate][0]
+                    
+                        x,y = self.BlockAndIndexToXY(block,index)
+
+                        # print("Unique candiate : ",candidate,
+                        # "\t[x,y] = [",x,",",y,"]")
+
+                        self.matrix[x][y] = candidate
+                        self.countOfCandiates -= len(self.candidates[x][y])
+                        self.candidates[x][y].clear()
+                        self.blankBlock -= 1
+
+                        # 行 列 消除候选数(由于这是处于宫搜索中 候选数仅出现一个位置故宫不考虑)
+                        for r in range(9):
+                            if r == x or len(self.candidates[r][y]) == 0:
+                                continue
+
+                            if candidate in self.candidates[r][y]:
+                                self.candidates[r][y].remove(candidate)
+                                self.countOfCandiates -= 1
+
+                        for c in range(9):
+                            if c == y or len(self.candidates[x][c]) == 0:
+                                continue
+
+                            if candidate in self.candidates[x][c]:
+                                self.candidates[x][c].remove(candidate)
+                                self.countOfCandiates -= 1
+
+            # j = -1
+            # for i in distribution:
+            #     j += 1
+            #     print(j," : ",i)
+    
+            # for i in potential:
+            #     print(i)
+            # input()
+            # os.system("cls")
+
+#</editor-fold>
