@@ -82,12 +82,13 @@ class SodokuMatrix:
 
         # for i in self.candidates:
         #     print(i)
+        # input()
 
         self.Optimize()
         print("********************** After optimizing ************************")
         print("The amount of blank unit : [ ",self.blankBlock," ]")
         print("The count of candiates : [ ",self.countOfCandiates," ]")
-        # input()
+        input()
 
     # 通过行列下标获得所在宫下标
     def GetBlocKIndex(self,_row,_column):
@@ -463,15 +464,13 @@ class SodokuMatrix:
                     if set(distribution[j]) <= set(distribution[i]):
                         temp.append(j)
 
-
-                sorted(temp)
+                temp.sort()
 
                 if (len(temp) == 1 and len(distribution[temp[0]]) != 1) or temp in potential or len(temp) == blankUnit:
                     continue
 
                 potential.append(temp)
 
-            
             # 处理潜在有效数对
             # 判断数对中候选数区域个数是否和数对个数相匹配
             for i in potential:
@@ -483,14 +482,14 @@ class SodokuMatrix:
 
                 # 数对个数和候选区域总数匹配 则消数
                 if cos == len(i):
-                    # 唯一数对法 直接填补矩阵
+                    # 数组唯余 直接填补矩阵
                     if cos == 1:
                         candidate = i[0]
                         index = distribution[candidate][0]
                     
                         x,y = self.BlockAndIndexToXY(block,index)
 
-                        # print("Unique candiate : ",candidate,
+                        # print("*Unique candiate : ",candidate,
                         # "\t[x,y] = [",x,",",y,"]")
 
                         self.matrix[x][y] = candidate
@@ -514,15 +513,261 @@ class SodokuMatrix:
                             if candidate in self.candidates[x][c]:
                                 self.candidates[x][c].remove(candidate)
                                 self.countOfCandiates -= 1
+                    
+                    # 长度大于1的数对组合
+                    # 消除[宫内]候选区域数组外的其它候选数
+                    else:
+                        # 获得最大潜在数对最大分布区域最大集
+                        pos = []
+                        for k in i:
+                            if len(distribution[k]) > len(pos):
+                                pos = distribution[k]
+                        
+                        # print("*Valid arrey : ",i,
+                        # "   Block : ",block,
+                        # "   positions : ",pos)
 
-            # j = -1
-            # for i in distribution:
-            #     j += 1
-            #     print(j," : ",i)
-    
-            # for i in potential:
-            #     print(i)
-            # input()
-            # os.system("cls")
+                        for k in pos:
+                            x,y = self.BlockAndIndexToXY(block,k)
+                            wtbr = []
 
+                            for j in self.candidates[x][y]:
+                                if j not in i:
+                                    wtbr.append(j)
+
+                            for j in wtbr:
+                                self.candidates[x][y].remove(j)
+                                # print("Block : ",block," x,y : ",x,",",y,
+                                # "   Removed ",j)
+                                self.countOfCandiates -= 1
+
+        # print("宫优化后 ",self.countOfCandiates)
+        # for i in self.candidates:
+        #     print(i)
+        # input()
+        # os.system("cls")
+
+        # 行搜索数组
+        for r in range(9):
+            # 分布数组 存放为纵坐标
+            distribution = [[],[],[],[],[],[],[],[],[],[]]
+            array = []
+            blankUnit = 0
+
+            for c in range(9):
+                if len(self.candidates[r][c]) == 0:
+                    continue
+
+                for k in self.candidates[r][c]:
+                    distribution[k].append(c)
+
+                blankUnit += 1
+
+            # 寻找潜在数对
+            for i in range(1,10): # 主集
+                temp = []
+                temp.append(i)
+
+                for j in range(1,10): # 子集
+                    if i == j or len(distribution[j]) == 0:
+                        continue
+
+                    if set(distribution[j]) <= set(distribution[i]):
+                        temp.append(j)
+
+                temp.sort()
+
+                if (len(temp) == 1 and len(distribution[temp[0]]) != 1) or temp in array or len(temp) == blankUnit:
+                    continue
+
+                array.append(temp)
+            
+            # 处理数对
+            for i in array:
+                # 集合区域数
+                cos = 0
+            
+                # 寻找数对最大集合数
+                for k in i:
+                    if len(distribution[k]) > cos:
+                        cos = len(distribution[k])
+
+                # 数对个数和所占候选区域相同
+                # 则该数对符合条件
+                if cos == len(i):
+                    # 行唯一余数
+                    if cos == 1:
+                        candidate = i[0]
+                        c = distribution[candidate][0]
+
+                        self.matrix[r][c] = candidate
+                        self.countOfCandiates -= len(self.candidates[r][c])
+                        self.candidates[r][c].clear()
+
+                        # print("*Unique candidate : ",candidate,
+                        # "   x,y : ",r,",",c)
+
+                        # 宫 列 候选数消除
+                        block = self.GetBlocKIndex(r,c)
+
+                        for h in self.GetRangeByBlock_Row(block):
+                            for l in self.GetRangeByBlock_Column(block):
+                                if len(self.candidates[h][l]) == 0:
+                                    continue
+
+                                if candidate in self.candidates[h][l]:
+                                    self.candidates[h][l].remove(candidate)
+                                    self.countOfCandiates -= 1
+
+                        for h in range(9):
+                            if len(self.candidates[h][c]) == 0:
+                                continue
+
+                            if candidate in self.candidates[h][c]:
+                                self.candidates[h][c].remove(candidate)
+                                self.countOfCandiates -= 1
+                    # 数对占位
+                    else:
+                        # 寻找区域并集(纵坐标)
+                        pos = []
+                        for k in i:
+                            if len(distribution[k]) > len(pos):
+                                pos = distribution[k]
+
+                        # print("*Valid array : ",i,
+                        # " Row : ",r,
+                        # " Positions : ",pos)
+
+                        # 候选区域删除其他候选数
+                        for k in pos:
+                            if len(self.candidates[r][k]) == 0:
+                                continue
+
+                            wtbr = []
+                            for s in self.candidates[r][k]:
+                                if s not in i:
+                                    wtbr.append(s)
+
+                            self.countOfCandiates -= len(wtbr)
+                            for s in wtbr:
+                                self.candidates[r][k].remove(s)
+                                # print("Remove : ",s,
+                                # "   x,y : ",r,",",k)
+
+        # print("行优化后 ",self.countOfCandiates)
+        # for i in self.candidates:
+        #     print(i)
+        # input()
+        # os.system("cls")
+
+        # 列搜索数组
+        for c in range(9):
+            # 分布数组 存放为横坐标
+            distribution = [[],[],[],[],[],[],[],[],[],[]]
+            array = []
+            blankUnit = 0
+
+            for r in range(9):
+                if len(self.candidates[r][c]) == 0:
+                    continue
+
+                for k in self.candidates[r][c]:
+                    distribution[k].append(r)
+
+                blankUnit += 1
+
+            # 寻找潜在数对
+            for i in range(1,10): # 主集
+                temp = []
+                temp.append(i)
+
+                for j in range(1,10): # 子集
+                    if i == j or len(distribution[j]) == 0:
+                        continue
+
+                    if set(distribution[j]) <= set(distribution[i]):
+                        temp.append(j)
+
+                temp.sort()
+
+                if (len(temp) == 1 and len(distribution[temp[0]]) != 1) or temp in array or len(temp) == blankUnit:
+                    continue
+
+                array.append(temp)
+            
+            # 处理数对
+            for i in array:
+                # 集合区域数
+                cos = 0
+            
+                # 寻找数对最大集合数
+                for k in i:
+                    if len(distribution[k]) > cos:
+                        cos = len(distribution[k])
+
+                # 数对个数和所占候选区域相同
+                # 则该数对符合条件
+                if cos == len(i):
+                    # 行唯一余数
+                    if cos == 1:
+                        candidate = i[0]
+                        r = distribution[candidate][0]
+
+                        self.matrix[r][c] = candidate
+                        self.countOfCandiates -= len(self.candidates[r][c])
+                        self.candidates[r][c].clear()
+
+                        # print("*Unique candidate : ",candidate,
+                        # "   x,y : ",r,",",c)
+
+                        # 宫 行 候选数消除
+                        block = self.GetBlocKIndex(r,c)
+
+                        for h in self.GetRangeByBlock_Row(block):
+                            for l in self.GetRangeByBlock_Column(block):
+                                if len(self.candidates[h][l]) == 0:
+                                    continue
+
+                                if candidate in self.candidates[h][l]:
+                                    self.candidates[h][l].remove(candidate)
+                                    self.countOfCandiates -= 1
+
+                        for l in range(9):
+                            if len(self.candidates[r][l]) == 0:
+                                continue
+
+                            if candidate in self.candidates[r][l]:
+                                self.candidates[r][l].remove(candidate)
+                                self.countOfCandiates -= 1
+                    # 数对占位
+                    else:
+                        # 寻找区域并集(行坐标)
+                        pos = []
+                        for k in i:
+                            if len(distribution[k]) > len(pos):
+                                pos = distribution[k]
+
+                        # print("*Valid array : ",i,
+                        # " Row : ",r,
+                        # " Positions : ",pos)
+
+                        # 候选区域删除其他候选数
+                        for k in pos:
+                            if len(self.candidates[k][c]) == 0:
+                                continue
+
+                            wtbr = []
+                            for s in self.candidates[k][c]:
+                                if s not in i:
+                                    wtbr.append(s)
+
+                            self.countOfCandiates -= len(wtbr)
+                            for s in wtbr:
+                                self.candidates[k][c].remove(s)
+                                # print("Remove : ",s,
+                                # "   x,y : ",k,",",c)
+
+        # print("列优化后 ",self.countOfCandiates)
+        # for i in self.candidates:
+        #     print(i)    
 #</editor-fold>
